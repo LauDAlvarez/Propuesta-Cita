@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Una invitación para esta noche</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1c0f26;
+    --plum: #4a1b45;
+    --rose: #ff8fa6;
+    --peach: #ffd0a6;
+    --paper: #fff4ee;
+    --muted: #d9bfd0;
+    --green: #35d489;
+    --card: rgba(255, 255, 255, .07);
+    --line: rgba(255, 255, 255, .18);
+    --serif: "Fraunces", Georgia, "Times New Roman", serif;
+    --sans: "Figtree", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: var(--sans);
+    color: var(--paper);
+    background:
+      radial-gradient(60rem 40rem at 85% -10%, #7a2a5c 0%, transparent 60%),
+      radial-gradient(50rem 40rem at -10% 110%, #5b1f4f 0%, transparent 60%),
+      var(--ink);
+    background-attachment: fixed;
+    overflow-x: hidden;
+  }
+  .stage {
+    min-height: 100%;
+    display: grid;
+    place-items: center;
+    padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
+  }
+  .step { display: none; width: 100%; max-width: 560px; text-align: center; }
+  .step.active { display: block; animation: fade .5s ease both; }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+  h1 {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: clamp(2.2rem, 7vw, 3.4rem);
+    line-height: 1.08;
+    letter-spacing: -.01em;
+    margin: 0 0 14px;
+  }
+  .lead { color: var(--muted); font-size: 1.1rem; line-height: 1.5; margin: 0 0 34px; }
+
+  .actions { display: flex; gap: 14px; justify-content: center; align-items: center; flex-wrap: wrap; min-height: 64px; }
+
+  .btn {
+    font: 600 1.1rem var(--sans);
+    border: 0;
+    border-radius: 999px;
+    padding: 15px 34px;
+    cursor: pointer;
+    color: var(--ink);
+    background: linear-gradient(135deg, var(--peach), var(--rose));
+    box-shadow: 0 8px 28px rgba(255, 143, 166, .28);
+    transition: transform .15s ease, box-shadow .15s ease, opacity .2s;
+  }
+  .btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(255, 143, 166, .4); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
+  .btn:focus-visible, .opt:focus-within, .time:focus-visible, .link:focus-visible {
+    outline: 3px solid var(--peach); outline-offset: 3px;
+  }
+  .btn.ghost {
+    background: transparent; color: var(--paper); box-shadow: none;
+    border: 1.5px solid var(--line);
+  }
+  .btn.ghost:hover { transform: none; box-shadow: none; }
+
+  /* Botón "No" que se repele (la posición la maneja el script) */
+  .runaway.flying {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 50;
+    margin: 0;
+    transition: none;
+    will-change: transform;
+  }
+
+  .link {
+    background: none; border: 0; color: var(--muted); font: 500 .95rem var(--sans);
+    margin-top: 26px; cursor: pointer; text-decoration: underline; text-underline-offset: 4px;
+  }
+
+  /* Selector de menú */
+  .options { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 30px; }
+  .opt { position: relative; display: block; cursor: pointer; }
+  .opt input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+  .opt .face {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 26px 12px; border-radius: 22px;
+    background: var(--card); border: 1.5px solid var(--line);
+    transition: border-color .15s, background .15s, transform .15s;
+  }
+  .opt .emoji { font-size: 2.6rem; line-height: 1; }
+  .opt .name { font: 700 1.5rem var(--serif); }
+  .opt .desc { font-size: .9rem; color: var(--muted); }
+  .opt:hover .face { transform: translateY(-2px); }
+  .opt input:checked + .face { border-color: var(--rose); background: rgba(255, 143, 166, .16); }
+
+  /* Cubos de horario */
+  .times { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 30px; }
+  @media (min-width: 520px) { .times { grid-template-columns: repeat(5, 1fr); } }
+  .time {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    display: grid; place-items: center;
+    font: 700 1.35rem var(--serif);
+    color: var(--paper);
+    background: var(--card);
+    border: 2px solid var(--line);
+    border-radius: 18px;
+    cursor: pointer;
+    transition: border-color .15s, box-shadow .15s, background .15s, transform .15s;
+  }
+  .time:hover { transform: translateY(-2px); }
+  .time .tick {
+    position: absolute; top: -9px; right: -9px;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--green); color: #06301d;
+    display: grid; place-items: center;
+    transform: scale(0); transition: transform .2s cubic-bezier(.3, 1.6, .5, 1);
+  }
+  .time .tick svg { width: 15px; height: 15px; }
+  .time[aria-checked="true"] {
+    border-color: var(--green);
+    background: rgba(53, 212, 137, .14);
+    box-shadow: 0 0 0 4px rgba(53, 212, 137, .25), 0 0 26px rgba(53, 212, 137, .35);
+  }
+  .time[aria-checked="true"] .tick { transform: scale(1); }
+
+  /* Resumen */
+  .summary {
+    background: var(--card); border: 1.5px solid var(--line); border-radius: 24px;
+    padding: 8px 24px; margin: 0 auto 22px; max-width: 420px; text-align: left;
+  }
+  .row { display: flex; justify-content: space-between; align-items: baseline; padding: 16px 0; }
+  .row + .row { border-top: 1px solid var(--line); }
+  .row span { color: var(--muted); }
+  .row b { font: 700 1.4rem var(--serif); }
+  .note { font: 500 italic 1.25rem var(--serif); color: var(--peach); margin: 0 0 32px; }
+
+  .sending { color: var(--muted); margin-top: 18px; min-height: 1.4em; font-size: .95rem; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<main class="stage">
+
+  <!-- 1. Invitación -->
+  <section class="step active" id="step-1">
+    <h1>¿Querés que te cocine hoy a la noche?</h1>
+    <p class="lead">Una cena para dos, en casa. De lo demás me encargo yo.</p>
+    <div class="actions" id="actions-1">
+      <button class="btn" id="yes" type="button">Sí</button>
+      <button class="btn ghost runaway" id="no1" type="button">No</button>
+    </div>
+  </section>
+
+  <!-- 2. Menú -->
+  <section class="step" id="step-2">
+    <h1>¿Qué se te antoja?</h1>
+    <p class="lead">Elegí el menú de esta noche.</p>
+    <div class="options" role="radiogroup" aria-label="Menú">
+      <label class="opt">
+        <input type="radio" name="comida" value="Pasta">
+        <span class="face"><span class="emoji" aria-hidden="true">🍝</span><span class="name">Pasta</span><span class="desc">Salsa casera</span></span>
+      </label>
+      <label class="opt">
+        <input type="radio" name="comida" value="Carne">
+        <span class="face"><span class="emoji" aria-hidden="true">🥩</span><span class="name">Carne</span><span class="desc">A la parrilla</span></span>
+      </label>
+    </div>
+    <button class="btn" id="to-time" type="button" disabled>Siguiente</button>
+    <div><button class="link" type="button" data-back="1">Volver</button></div>
+  </section>
+
+  <!-- 3. Horario -->
+  <section class="step" id="step-3">
+    <h1>¿A qué hora paso a buscarte?</h1>
+    <p class="lead">Elegí el horario que mejor te quede.</p>
+    <div class="times" id="times" role="radiogroup" aria-label="Horario"></div>
+    <button class="btn" id="to-summary" type="button" disabled>Siguiente</button>
+    <div><button class="link" type="button" data-back="2">Volver</button></div>
+  </section>
+
+  <!-- 4. Resumen -->
+  <section class="step" id="step-4">
+    <h1>Entonces, quedamos así</h1>
+    <div class="summary">
+      <div class="row"><span>Menú</span><b id="sum-food"></b></div>
+      <div class="row"><span>Te paso a buscar</span><b id="sum-time"></b></div>
+    </div>
+    <p class="note">Nos vemos pronto.</p>
+    <div class="actions" id="actions-4">
+      <button class="btn" id="confirm" type="button">Dale!</button>
+      <button class="btn ghost runaway" id="no2" type="button">No</button>
+    </div>
+    <p class="sending" id="sending" aria-live="polite"></p>
+  </section>
+
+  <!-- 5. Final -->
+  <section class="step" id="step-5">
+    <h1>Listo, es un plan</h1>
+    <p class="lead" id="final-msg"></p>
+  </section>
+
+</main>
+
+<script>
+(function () {
+  const HORARIOS = ['20:00', '20:30', '21:00', '21:30', '22:00'];
+  const state = { comida: null, horario: null };
+  const $ = (s, r = document) => r.querySelector(s);
+
+  /* ---------- Navegación ---------- */
+  function go(n) {
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    $('#step-' + n).classList.add('active');
+  }
+  document.querySelectorAll('[data-back]').forEach(b =>
+    b.addEventListener('click', () => go(b.dataset.back)));
+
+  /* ---------- Paso 1 ---------- */
+  $('#yes').addEventListener('click', () => go(2));
+
+  /* ---------- Paso 2: menú ---------- */
+  document.querySelectorAll('input[name="comida"]').forEach(r =>
+    r.addEventListener('change', () => {
+      state.comida = r.value;
+      $('#to-time').disabled = false;
+    }));
+  $('#to-time').addEventListener('click', () => go(3));
+
+  /* ---------- Paso 3: horarios (cubos) ---------- */
+  const tick = '<span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>';
+  const timesBox = $('#times');
+  HORARIOS.forEach(h => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'time';
+    b.setAttribute('role', 'radio');
+    b.setAttribute('aria-checked', 'false');
+    b.dataset.value = h;
+    b.innerHTML = h + tick;
+    b.addEventListener('click', () => {
+      timesBox.querySelectorAll('.time').forEach(t => t.setAttribute('aria-checked', 'false'));
+      b.setAttribute('aria-checked', 'true');
+      state.horario = h;
+      $('#to-summary').disabled = false;
+    });
+    timesBox.appendChild(b);
+  });
+  $('#to-summary').addEventListener('click', () => {
+    $('#sum-food').textContent = state.comida;
+    $('#sum-time').textContent = state.horario + ' hs';
+    go(4);
+  });
+
+  /* ---------- Paso 4: confirmar ---------- */
+  $('#confirm').addEventListener('click', async () => {
+    const btn = $('#confirm');
+    btn.disabled = true;
+    $('#sending').textContent = 'Un segundo...';
+    try {
+      await fetch('/api/respuesta', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(state),
+      });
+    } catch (e) { console.error(e); }
+    $('#final-msg').textContent =
+      'Te paso a buscar a las ' + state.horario + ' y cocino ' +
+      (state.comida === 'Pasta' ? 'pasta' : 'carne') + '. Nos vemos pronto.';
+    go(5);
+  });
+
+  /* ---------- Botón "No": se repele como un imán de igual polo ---------- */
+  function makeRunaway(btn, avoidEl) {
+    const R = 170;      // alcance del campo magnético (px desde el borde del botón)
+    const A = 16000;    // fuerza de repulsión
+    const K = 55;       // fuerza con la que vuelve a su lugar
+    const C = 13;       // amortiguación (más alto = más suave, sin rebotes)
+    const GAP = 10;     // distancia mínima que mantiene con el cursor
+    const M = 14;       // margen con los bordes de la pantalla
+
+    let flying = false, ph = null, cur = null;
+    let x = 0, y = 0, vx = 0, vy = 0, w = 0, h = 0;
+    let pinX = false, pinY = false;
+    let raf = 0, last = 0;
+
+    const active = () => btn.closest('.step').classList.contains('active');
+
+    function distToRect(px, py, r) {
+      const dx = Math.max(r.left - px, 0, px - r.right);
+      const dy = Math.max(r.top - py, 0, py - r.bottom);
+      return Math.hypot(dx, dy);
+    }
+    const boxAt = (bx, by) => ({ left: bx, top: by, right: bx + w, bottom: by + h });
+
+    function render() { btn.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0)'; }
+
+    function takeOff() {
+      if (flying) return;
+      const r = btn.getBoundingClientRect();
+      w = r.width; h = r.height;
+      ph = document.createElement('span');
+      ph.style.cssText = 'display:inline-block;width:' + r.width + 'px;height:' + r.height + 'px';
+      ph.setAttribute('aria-hidden', 'true');
+      btn.parentNode.insertBefore(ph, btn);
+      x = r.left; y = r.top; vx = vy = 0;
+      btn.classList.add('flying');
+      flying = true;
+      render();
+    }
+
+    function home() {
+      const r = (ph || btn).getBoundingClientRect();
+      return { x: r.left, y: r.top };
+    }
+
+    // Si queda arrinconado contra una pared, se reubica en el punto más lejano
+    function relocate() {
+      const maxX = window.innerWidth - w - M, maxY = window.innerHeight - h - M;
+      const pts = [[M, M], [maxX, M], [M, maxY], [maxX, maxY],
+                   [maxX / 2, M], [maxX / 2, maxY], [M, maxY / 2], [maxX, maxY / 2]];
+      const avoid = avoidEl.getBoundingClientRect();
+      let best = null;
+      pts.forEach(p => {
+        const b = boxAt(p[0], p[1]);
+        const hitsAvoid = !(b.right + 20 < avoid.left || b.left - 20 > avoid.right ||
+                            b.bottom + 20 < avoid.top || b.top - 20 > avoid.bottom);
+        const d = distToRect(cur.x, cur.y, b);
+        if (!hitsAvoid && (!best || d > best.d)) best = { x: p[0], y: p[1], d: d };
+      });
+      if (best) { x = best.x; y = best.y; vx = vy = 0; }
+    }
+
+    function frame(t) {
+      raf = 0;
+      if (!active()) return;
+      const dt = Math.min(((t - last) / 1000) || 0.016, 1 / 30);
+      last = t;
+      w = btn.offsetWidth; h = btn.offsetHeight;
+      const hm = home();
+
+      // Resorte hacia su posición original
+      let ax = K * (hm.x - x), ay = K * (hm.y - y);
+
+      // Repulsión: empuja en línea recta, alejándose del cursor
+      if (cur) {
+        const cx = x + w / 2, cy = y + h / 2;
+        const de = distToRect(cur.x, cur.y, boxAt(x, y));
+        if (de < R) {
+          let dx = cx - cur.x, dy = cy - cur.y;
+          let dl = Math.hypot(dx, dy);
+          if (dl < 0.5) { const a = Math.random() * 6.283; dx = Math.cos(a); dy = Math.sin(a); dl = 1; }
+          dx /= dl; dy /= dl;
+          const s = Math.pow(1 - de / R, 2) * A;
+          ax += dx * s; ay += dy * s;
+          // Contra una pared, resbala a lo largo de ella en lugar de quedarse trabado
+          if (pinX) ay += (dy >= 0 ? 1 : -1) * s * 0.9;
+          if (pinY) ax += (dx >= 0 ? 1 : -1) * s * 0.9;
+        }
+      }
+
+      // Tampoco se encima con el botón principal
+      const av = avoidEl.getBoundingClientRect();
+      const me = boxAt(x, y);
+      if (!(me.right < av.left || me.left > av.right || me.bottom < av.top || me.top > av.bottom)) {
+        const ox = (x + w / 2) - (av.left + av.right) / 2;
+        const oy = (y + h / 2) - (av.top + av.bottom) / 2;
+        const ol = Math.hypot(ox, oy) || 1;
+        ax += (ox / ol) * 5000; ay += (oy / ol) * 5000;
+      }
+
+      vx += ax * dt; vy += ay * dt;
+      const damp = Math.exp(-C * dt);
+      vx *= damp; vy *= damp;
+      x += vx * dt; y += vy * dt;
+
+      // El cursor nunca puede pisar el botón: lo empuja por delante
+      if (cur && distToRect(cur.x, cur.y, boxAt(x, y)) < GAP) {
+        let dx = x + w / 2 - cur.x, dy = y + h / 2 - cur.y;
+        let dl = Math.hypot(dx, dy);
+        if (dl < 0.5) { const a = Math.random() * 6.283; dx = Math.cos(a); dy = Math.sin(a); dl = 1; }
+        dx /= dl; dy /= dl;
+        let s = 0;
+        while (s < 600 && distToRect(cur.x, cur.y, boxAt(x + dx * s, y + dy * s)) < GAP) s += 3;
+        x += dx * s; y += dy * s;
+      }
+
+      // Bordes de la pantalla
+      const minX = M, maxX = window.innerWidth - w - M;
+      const minY = M, maxY = window.innerHeight - h - M;
+      pinX = pinY = false;
+      if (x < minX) { x = minX; vx = Math.max(vx, 0); pinX = true; }
+      if (x > maxX) { x = maxX; vx = Math.min(vx, 0); pinX = true; }
+      if (y < minY) { y = minY; vy = Math.max(vy, 0); pinY = true; }
+      if (y > maxY) { y = maxY; vy = Math.min(vy, 0); pinY = true; }
+
+      if (cur && distToRect(cur.x, cur.y, boxAt(x, y)) < GAP * 0.6) relocate();
+
+      render();
+
+      const settled = Math.hypot(vx, vy) < 1 && Math.hypot(hm.x - x, hm.y - y) < 0.5;
+      if (settled && !cur) { x = hm.x; y = hm.y; render(); return; }
+      raf = requestAnimationFrame(frame);
+    }
+
+    function start() {
+      if (raf || !flying) return;
+      last = performance.now();
+      raf = requestAnimationFrame(frame);
+    }
+
+    document.addEventListener('pointermove', e => {
+      if (!active()) return;
+      cur = { x: e.clientX, y: e.clientY };
+      if (!flying) {
+        if (distToRect(cur.x, cur.y, btn.getBoundingClientRect()) >= R) return;
+        takeOff();
+      }
+      start();
+    });
+
+    // Si el mouse sale de la ventana, o se levanta el dedo, el botón vuelve
+    const release = () => { cur = null; start(); };
+    document.documentElement.addEventListener('mouseleave', release);
+    document.addEventListener('pointerup', e => { if (e.pointerType !== 'mouse') release(); });
+    document.addEventListener('pointercancel', release);
+
+    // Toque directo (celular) o mouse que logra apoyarse: lo empuja lejos
+    ['pointerdown', 'touchstart', 'mousedown'].forEach(evt =>
+      btn.addEventListener(evt, e => {
+        e.preventDefault();
+        const p = e.touches ? e.touches[0] : e;
+        cur = { x: p.clientX, y: p.clientY };
+        takeOff();
+        start();
+      }, { passive: false }));
+
+    // Teclado: si le hacen foco, se aparta
+    btn.addEventListener('focus', () => {
+      takeOff();
+      cur = { x: x + w / 2, y: y + h / 2 };
+      start();
+      btn.blur();
+      setTimeout(release, 500);
+    });
+
+    btn.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); });
+    window.addEventListener('resize', () => { if (flying) start(); });
+  }
+
+  makeRunaway($('#no1'), $('#yes'));
+  makeRunaway($('#no2'), $('#confirm'));
+})();
+</script>
+</body>
+</html>
